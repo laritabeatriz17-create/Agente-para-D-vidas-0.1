@@ -9,7 +9,7 @@ st.title("Agente para tirar Dúvidas")
 api_key = "API_KEY"  # <-- substitua "API_KEY" pela sua chave real da Groq
 
 client = Groq(
-    api_key= 'api_key')
+    API_KEY= 'API_KEY')
 
 # Mantém o histórico da conversa para dar mais contexto e continuidade
 if "historico" not in st.session_state:
