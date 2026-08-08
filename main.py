@@ -1,27 +1,27 @@
 from groq import Groq, APIConnectionError, APIStatusError, RateLimitError
 import streamlit as st
 import os
-
+ 
 # pip install groq
-
+ 
 st.title("Agente para tirar Dúvidas")
-
+ 
 # --- Chave da API ---
 # Substitua o texto abaixo pela sua chave real da Groq.
-API_KEY = "sua_chave_aqui"
-
-if not API_KEY or API_KEY == "sua_chave_aqui":
+API_KEY = "api_key"
+ 
+if not API_KEY or API_KEY == "api_key":
     st.error("Defina sua chave da API da Groq na variável API_KEY, no topo do arquivo.")
     st.stop()
-
+ 
 client = Groq(api_key=API_KEY)
-
+ 
 # Mantém o histórico da conversa para dar mais contexto e continuidade
 if "historico" not in st.session_state:
     st.session_state.historico = []
-
+ 
 pergunta = st.text_input("pergunta:")
-
+ 
 if st.button("enviar"):
     if pergunta.strip():
         mensagens = [
@@ -37,11 +37,11 @@ if st.button("enviar"):
                 ),
             }
         ]
-
+ 
         # adiciona histórico anterior para dar continuidade à conversa
         mensagens.extend(st.session_state.historico)
         mensagens.append({"role": "user", "content": pergunta})
-
+ 
         try:
             with st.spinner("Pensando..."):
                 resposta = client.chat.completions.create(
@@ -49,9 +49,9 @@ if st.button("enviar"):
                     temperature=0.7,
                     messages=mensagens,
                 )
-
+ 
             texto_resposta = resposta.choices[0].message.content
-
+ 
             if not texto_resposta:
                 st.warning("O agente não retornou nenhuma resposta. Tente novamente.")
             else:
@@ -61,7 +61,7 @@ if st.button("enviar"):
                     {"role": "assistant", "content": texto_resposta}
                 )
                 st.write(texto_resposta)
-
+ 
         except RateLimitError:
             st.error("Limite de requisições atingido. Aguarde um pouco e tente novamente.")
         except APIConnectionError:
@@ -72,7 +72,7 @@ if st.button("enviar"):
             st.error(f"Ocorreu um erro inesperado: {e}")
     else:
         st.warning("Digite uma pergunta antes de enviar.")
-
+ 
 # Mostra o histórico da conversa na tela
 if st.session_state.historico:
     st.divider()
