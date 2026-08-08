@@ -2,32 +2,35 @@ import os
 import streamlit as st
 from groq import Groq
 
-# pip install groq streamlit
-
+# Configuração da página
+st.set_page_config(page_title="Agente de Dúvidas", page_icon="💡")
 st.title("Agente para tirar Dúvidas")
 
 # --- Chave da API ---
-# Busca a chave nas variáveis de ambiente ou usa st.secrets no Streamlit Cloud
 API_KEY = os.getenv("GROQ_API_KEY", "")
 
-# Caso prefira inserir manualmente para testes locais, descomente a linha abaixo:
+# Se não encontrar no ambiente, você pode colar sua chave diretamente aqui para testes locais:
 # API_KEY = "gsk_sua_chave_aqui"
 
 if not API_KEY or API_KEY == "api_key":
-    st.error("Defina sua chave da API da Groq na variável de ambiente GROQ_API_KEY ou no código.")
+    st.error("Defina sua chave da API da Groq na variável GROQ_API_KEY ou no arquivo do código.")
     st.stop()
 
 client = Groq(api_key=API_KEY)
 
-# Mantém o histórico da conversa para dar mais contexto e continuidade
+# Mantém o histórico da conversa na sessão
 if "historico" not in st.session_state:
     st.session_state.historico = []
 
-pergunta = st.text_input("pergunta:")
+# Campo de formulário para permitir envio ao apertar Enter
+with st.form(key="form_pergunta", clear_on_submit=True):
+    pergunta = st.text_input("Sua pergunta:")
+    botao_enviar = st.form_submit_button("Enviar")
 
-if st.button("enviar"):
+if botao_enviar:
     if pergunta.strip():
-        mensagens = [
+        # 1. Prepara a estrutura enviada à Groq (System Prompt fixo na primeira posição)
+        mensagens_api = [
             {
                 "role": "system",
                 "content": (
@@ -41,16 +44,16 @@ if st.button("enviar"):
             }
         ]
 
-        # Adiciona histórico anterior para dar continuidade à conversa
-        mensagens.extend(st.session_state.historico)
-        mensagens.append({"role": "user", "content": pergunta})
+        # 2. Adiciona o histórico existente + a nova pergunta
+        mensagens_api.extend(st.session_state.historico)
+        mensagens_api.append({"role": "user", "content": pergunta})
 
         try:
             with st.spinner("Pensando..."):
                 resposta = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     temperature=0.7,
-                    messages=mensagens,
+                    messages=mensagens_api,
                 )
 
             texto_resposta = resposta.choices[0].message.content
@@ -58,12 +61,9 @@ if st.button("enviar"):
             if not texto_resposta:
                 st.warning("O agente não retornou nenhuma resposta. Tente novamente.")
             else:
-                # Guarda no histórico
+                # 3. Salva no histórico somente APÓS a confirmação de sucesso da API
                 st.session_state.historico.append({"role": "user", "content": pergunta})
-                st.session_state.historico.append(
-                    {"role": "assistant", "content": texto_resposta}
-                )
-                st.write(texto_resposta)
+                st.session_state.historico.append({"role": "assistant", "content": texto_resposta})
 
         except Exception as e:
             st.error(f"Ocorreu um erro ao consultar a API da Groq: {e}")
@@ -71,7 +71,7 @@ if st.button("enviar"):
     else:
         st.warning("Digite uma pergunta antes de enviar.")
 
-# Mostra o histórico da conversa na tela
+# --- Exibição do Histórico na Tela ---
 if st.session_state.historico:
     st.divider()
     st.subheader("Histórico da conversa")
