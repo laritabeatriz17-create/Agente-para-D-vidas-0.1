@@ -61,15 +61,6 @@ if st.button("enviar"):
                     {"role": "assistant", "content": texto_resposta}
                 )
                 st.write(texto_resposta)
- 
-        except RateLimitError:
-            st.error("Limite de requisições atingido. Aguarde um pouco e tente novamente.")
-        except APIConnectionError:
-            st.error("Não foi possível conectar à API da Groq. Verifique sua conexão.")
-        except APIStatusError as e:
-            st.error(f"A API retornou um erro (status {e.status_code}). Tente novamente.")
-        except Exception as e:
-            st.error(f"Ocorreu um erro inesperado: {e}")
     else:
         st.warning("Digite uma pergunta antes de enviar.")
  
