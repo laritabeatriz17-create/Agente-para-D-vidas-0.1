@@ -22,7 +22,7 @@ st.title("Agente para tirar Dúvidas")
 pergunta  = st.text_input('pergunta:')
 
 if st.button('enviar'):
-    # if pergunta.strip():
+     if pergunta.strip():
         reposta =  client.chat.completions.create(
         model = "llama-3.3-70b-versatile",
         # temperature=0.7,
