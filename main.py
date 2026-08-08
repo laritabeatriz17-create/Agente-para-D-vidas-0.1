@@ -1,27 +1,30 @@
-from groq import Groq
-import streamlit as st
 import os
- 
-# pip install groq
- 
+import streamlit as st
+from groq import Groq
+
+# pip install groq streamlit
+
 st.title("Agente para tirar Dúvidas")
- 
+
 # --- Chave da API ---
-# Substitua o texto abaixo pela sua chave real da Groq.
-API_KEY = "api_key"
- 
+# Busca a chave nas variáveis de ambiente ou usa st.secrets no Streamlit Cloud
+API_KEY = os.getenv("GROQ_API_KEY", "")
+
+# Caso prefira inserir manualmente para testes locais, descomente a linha abaixo:
+# API_KEY = "gsk_sua_chave_aqui"
+
 if not API_KEY or API_KEY == "api_key":
-    st.error("Defina sua chave da API da Groq na variável API_KEY, no topo do arquivo.")
+    st.error("Defina sua chave da API da Groq na variável de ambiente GROQ_API_KEY ou no código.")
     st.stop()
- 
+
 client = Groq(api_key=API_KEY)
- 
+
 # Mantém o histórico da conversa para dar mais contexto e continuidade
 if "historico" not in st.session_state:
     st.session_state.historico = []
- 
+
 pergunta = st.text_input("pergunta:")
- 
+
 if st.button("enviar"):
     if pergunta.strip():
         mensagens = [
@@ -37,11 +40,11 @@ if st.button("enviar"):
                 ),
             }
         ]
- 
-        # adiciona histórico anterior para dar continuidade à conversa
+
+        # Adiciona histórico anterior para dar continuidade à conversa
         mensagens.extend(st.session_state.historico)
         mensagens.append({"role": "user", "content": pergunta})
- 
+
         try:
             with st.spinner("Pensando..."):
                 resposta = client.chat.completions.create(
@@ -49,21 +52,25 @@ if st.button("enviar"):
                     temperature=0.7,
                     messages=mensagens,
                 )
- 
+
             texto_resposta = resposta.choices[0].message.content
- 
+
             if not texto_resposta:
                 st.warning("O agente não retornou nenhuma resposta. Tente novamente.")
             else:
-                # guarda no histórico
+                # Guarda no histórico
                 st.session_state.historico.append({"role": "user", "content": pergunta})
                 st.session_state.historico.append(
                     {"role": "assistant", "content": texto_resposta}
                 )
                 st.write(texto_resposta)
+
+        except Exception as e:
+            st.error(f"Ocorreu um erro ao consultar a API da Groq: {e}")
+
     else:
         st.warning("Digite uma pergunta antes de enviar.")
- 
+
 # Mostra o histórico da conversa na tela
 if st.session_state.historico:
     st.divider()
